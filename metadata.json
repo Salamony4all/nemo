@@ -1,0 +1,6 @@
+{
+  "name": "Nemo Tours",
+  "description": "Premium Egyptian Expeditions and customizable Marsa Alam seaside adventures. Browse active offers, watch video reels, and save media natively.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

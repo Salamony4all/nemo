@@ -79,7 +79,7 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
           )}
 
           <motion.button
-            whileHover={{ scale: 101 }}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
             className="w-full py-3.5 bg-[#003b5c] hover:bg-[#00253b] text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#003b5c]"

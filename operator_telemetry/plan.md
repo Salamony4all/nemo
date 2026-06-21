@@ -1,47 +1,83 @@
-DIAGNOSIS
-The user has identified a broken logo image in the header of the live Vercel deployment (`https://nemo-chi-coral.vercel.app/`). Specifically, the logo on the far right of the header (visible on desktop) is reported as broken. The codebase indicates that this logo, along with a mobile version, uses an image imported as `nemoLogo` from `./logo.png`. The user has provided new image assets, one of which will be used to replace the current broken logo. The most direct approach to fix this is to replace the `logo.png` file with the new, correct logo.
+# Execution Plan: Nemo Administrator Dashboard Implementation
 
-STEP-BY-STEP EXECUTION PLAN
+## 1. DIAGNOSIS
+The user wants to implement an Administrator Dashboard for the Nemo application. This dashboard must be protected by a simple authentication mechanism (Username: "Admin", Password: "123") and allow the administrator to perform CRUD operations (specifically creating) on "offers" (tours), images, prices, and details.
 
-1.  **Remove Old Logo File:**
-    *   Delete the existing `src/logo.png` file from the repository.
+**Current State of Codebase:**
+- The application uses static data imports (`PRESEEDED_OFFERS`, `PRESEEDED_MEDIA`) from a `data` file.
+- The UI is built with React, Tailwind CSS, Lucide-react, and Motion (framer-motion).
+- Navigation is handled via a tab-based state (`activeTab`) in `App.tsx`.
+- Data types are defined in `types.ts`.
 
-2.  **Add New Logo File:**
-    *   Take the uploaded asset `media__1782028764933.png` and rename it to `logo.png`.
-    *   Place this newly renamed `logo.png` file into the `src/` directory.
+**Technical Requirements:**
+- **State Transition:** Data must move from static constants to React state (`useState`) so that the Admin Dashboard can update the UI in real-time.
+- **Authentication:** A lightweight login gate for the Admin section.
+- **UI/UX:** The dashboard must maintain the existing aesthetic (dark mode, glassmorphism, Lucide icons).
+- **Persistence:** To prevent data loss on refresh, `localStorage` should be implemented to persist admin changes.
 
-3.  **Verify Code Context (No Changes Expected):**
-    *   Open `src/App.tsx`.
-    *   Confirm that the import statement `import nemoLogo from "./logo.png";` is still present and unchanged.
-    *   Confirm that the `img` tags referencing `nemoLogo` in the header section remain unchanged:
-        *   Mobile-only branding:
-            ```html
-            <img
-              src={nemoLogo}
-              alt="Nemo Avatar badge logo"
-              className="h-8 w-8 object-contain rounded-full border border-slate-200/50 shadow-sm"
-            />
-            ```
-        *   Desktop branding (far right of header):
-            ```html
-            <img
-              src={nemoLogo}
-              alt="Nemo Avatar badge logo"
-              className="h-9 w-9 md:h-10 md:w-10 object-contain rounded-full border border-slate-200/50 shadow-sm"
-            />
-            ```
-    *   No modifications to `src/App.tsx` are required as the import path remains the same; only the underlying file is replaced.
+---
 
-VERIFICATION STEPS
+## 2. STEP-BY-STEP EXECUTION PLAN
 
-1.  **Local Development Server:**
-    *   Run the application locally using `npm start` (or `yarn start`).
-    *   Navigate to the local development URL (e.g., `http://localhost:3000`).
-    *   Verify that the logo image in the header (both mobile and desktop views, by resizing the browser) is now correctly displayed with the new logo and is no longer broken.
+### Step 1: State Management Refactor (`src/App.tsx`)
+Currently, the app reads directly from `PRESEEDED_OFFERS`. We need to move this into state.
+1. Modify `App.tsx` to initialize state using the preseeded data.
+2. Implement `localStorage` sync so that new offers added by the admin persist across browser refreshes.
+3. Define setter functions (`setOffers`, `setMedia`) that will be passed to the Admin Dashboard.
 
-2.  **Vercel Deployment (Post-Push):**
-    *   Commit the changes (deletion of old `logo.png` and addition of new `logo.png`).
-    *   Push the changes to the Git repository linked to Vercel.
-    *   Once the Vercel deployment is complete, navigate to the live page (`https://nemo-chi-coral.vercel.app/`).
-    *   Verify that the logo image in the header (on the far right for desktop, and near the settings icon for mobile) is correctly displayed and the broken image icon is gone.
-    *   Inspect the element in the browser's developer tools to ensure the `src` attribute of the image points to the new logo and it loads successfully (no 404 errors in the network tab). Problems with images not displaying on Vercel are sometimes related to pathing or caching, which this direct file replacement should address.
+### Step 2: Create Admin Authentication Component (`src/components/AdminAuth.tsx`)
+Create a simple, sleek login modal/page.
+1. **Fields:** Username and Password.
+2. **Logic:** Validate against `username === "Admin"` and `password === "123"`.
+3. **State:** On success, set an `isAdminAuthenticated` flag in the parent `App.tsx` or a context.
+4. **Styling:** Use the existing glassmorphism design (backdrop-blur, border-white/10).
+
+### Step 3: Create Admin Dashboard Component (`src/components/AdminDashboard.tsx`)
+Build the management interface.
+1. **Layout:** 
+    - A sidebar or top-toggle to switch between "Manage Offers" and "Manage Media".
+    - A form to add new items.
+    - A list/table of existing items with "Delete" capabilities.
+2. **Offer Form Fields:**
+    - Title (string)
+    - Price (number)
+    - Description (text)
+    - Image URL (string)
+    - Location/Duration (matching `TourOffer` type).
+3. **Media Form Fields:**
+    - Asset URL (string)
+    - Category (dropdown: Image/Video)
+    - Tag/Description.
+4. **Actions:** 
+    - `handleAddOffer()`: Appends a new `TourOffer` object to the state.
+    - `handleAddMedia()`: Appends a new `MediaAsset` object to the state.
+    - `handleDelete()`: Filters out the item by ID.
+
+### Step 4: Integration into Main Navigation (`src/App.tsx`)
+1. Add `"admin"` to the `activeTab` type union: `activeTab: "offers" | "media" | "ai" | "board" | "admin"`.
+2. Add an "Admin" button to the navigation menu (perhaps visible only via a hidden shortcut or a small gear icon in the corner).
+3. Implement the conditional rendering logic:
+   - If `activeTab === "admin"`:
+     - If `!isAdminAuthenticated` $\rightarrow$ Show `<AdminAuth />`.
+     - If `isAdminAuthenticated` $\rightarrow$ Show `<AdminDashboard />`.
+
+### Step 5: UI/UX Polish
+1. Use `motion.div` for transitions when entering the Admin Dashboard.
+2. Use `ShieldCheck` and `Settings` icons from Lucide-react.
+3. Ensure forms are responsive and match the "Nemo" color palette.
+
+---
+
+## 3. VERIFICATION STEPS
+
+### Functional Testing
+- [ ] **Auth Gate:** Try logging in with wrong credentials $\rightarrow$ should fail. Log in with `Admin`/`123` $\rightarrow$ should grant access.
+- [ ] **Add Offer:** Create a new tour offer $\rightarrow$ navigate back to "Offers" tab $\rightarrow$ verify the new tour appears in the feed with the correct price and image.
+- [ ] **Add Media:** Upload a new image URL $\rightarrow$ navigate to "Media Hub" $\rightarrow$ verify the asset is present.
+- [ ] **Persistence:** Add an offer $\rightarrow$ Refresh the page $\rightarrow$ verify the offer still exists (via `localStorage`).
+- [ ] **Deletion:** Delete an existing offer from the dashboard $\rightarrow$ verify it is removed from the main view.
+
+### UI/UX Testing
+- [ ] **Visual Consistency:** Ensure the Admin Dashboard uses the same fonts, colors, and blur effects as the rest of the app.
+- [ ] **Responsiveness:** Check that the admin forms are usable on mobile screen widths.
+- [ ] **Transitions:** Ensure `AnimatePresence` handles the switching between Admin and User views smoothly.

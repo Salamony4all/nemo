@@ -1,11 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MediaAsset } from "../types";
 import { PRESEEDED_MEDIA } from "../data";
-import { 
-  Download, Heart, Share2, Play, Volume2, VolumeX, 
-  Bookmark, Link, Check, Search, AlertCircle, Loader2, Sparkles,
-  Maximize2, X, Pause
-} from "lucide-react";
+import { Download, Heart, Share2, Play, Volume2, VolumeX, Bookmark, Maximize2, X, Pause, Sparkles, Image as ImageIcon, Film } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface MediaHubViewProps {
@@ -14,91 +10,69 @@ interface MediaHubViewProps {
 }
 
 export default function MediaHubView({ onSaveToBoard, savedAssetIds }: MediaHubViewProps) {
-  const [mediaList, setMediaList] = useState<MediaAsset[]>(PRESEEDED_MEDIA);
+  const [mediaList] = useState<MediaAsset[]>(PRESEEDED_MEDIA);
   const [activeReel, setActiveReel] = useState<MediaAsset | null>(PRESEEDED_MEDIA[0]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [filterType, setFilterType] = useState<"all" | "reel" | "photo">("all");
   const [expandedAsset, setExpandedAsset] = useState<MediaAsset | null>(null);
+  const [shareStatus, setShareStatus] = useState<{ [key: string]: boolean }>({});
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Synchronize actual video playback with external states
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.play().catch(err => {
-          console.warn("Autoplay or live play was prevented or failed:", err);
-        });
+        videoRef.current.play().catch(err => console.warn("Playback blocked:", err));
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, activeReel, isMuted]);
+  }, [isPlaying, activeReel]);
 
-  const filteredMedia = mediaList.filter(item => 
-    filterType === "all" ? true : item.type === filterType
-  );
+  const filteredMedia = mediaList.filter(item => filterType === "all" ? true : item.type === filterType);
 
-  const [shareStatus, setShareStatus] = useState<{[key: string]: boolean}>({});
-
-  // Share link to clipboard
   const handleShare = (asset: MediaAsset) => {
     const urlToShare = asset.facebookUrl || asset.sourceUrl;
     navigator.clipboard.writeText(urlToShare).then(() => {
       setShareStatus(prev => ({ ...prev, [asset.id]: true }));
-      setTimeout(() => {
-        setShareStatus(prev => ({ ...prev, [asset.id]: false }));
-      }, 2000);
-    }).catch(err => {
-      console.error("Failed to copy link: ", err);
+      setTimeout(() => setShareStatus(prev => ({ ...prev, [asset.id]: false })), 2000);
     });
   };
 
   return (
     <div id="media-hub-container" className="max-w-7xl mx-auto px-4 lg:px-6 py-6 space-y-8 animate-fade-in-up">
-      
-      {/* Intro Banner */}
-      <section className="bg-gradient-to-r from-[#003b5c] to-[#001d31] text-white rounded-2xl p-6 lg:p-8 shadow-md">
+      <section className="bg-gradient-to-r from-[#003b5c] to-[#001d31] text-white rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-1.5 bg-[#fcb882]/20 text-[#fcb882] px-3 py-1 rounded-full text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Nautilus Media Hub
+          <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/10 text-[#fcb882] px-3.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 fill-current" /> Nautilus Media Hub
           </div>
-          <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight">
-            Nemo Tours Facebook Reels & Posts
-          </h1>
-          <p className="text-xs lg:text-sm text-slate-300 leading-relaxed font-sans">
-            Directly browse vertical travel reels and high-resolution island photography published on 
-            <a href="https://www.facebook.com/tours.nemo/" target="_blank" rel="noreferrer" className="text-[#fcb882] underline ml-1 font-semibold">
-              facebook.com/tours.nemo/
-            </a>. Click to watch embedded reels, pin, or share them directly with your crew!
+          <h1 className="text-3xl font-serif font-extrabold tracking-tight">Nemo Tours Live Stream</h1>
+          <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
+            Browse vertical travel reels and high-resolution expeditions published directly on
+            <a href="https://www.facebook.com/tours.nemo/" target="_blank" rel="noreferrer" className="text-[#fcb882] hover:text-[#fcb882]/80 underline ml-1 font-semibold transition-colors">facebook.com/tours.nemo/</a>.
           </p>
         </div>
       </section>
 
-      {/* Main interactive segment: split view. Vertical interactive Reel player on Left, Gallery list on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Interactive Reel Autoplay Player - simulated mobile height */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Side Reel Simulation Component */}
         <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="w-full max-w-[340px] aspect-[9/16] bg-slate-900 rounded-[28px] overflow-hidden relative shadow-2xl border-4 border-slate-800 flex flex-col justify-between">
+          <div className="w-full max-w-[340px] aspect-[9/16] bg-slate-950 rounded-[36px] overflow-hidden relative shadow-2xl border-[6px] border-slate-900 flex flex-col justify-between">
             {activeReel ? (
               <>
-                {/* Embedded custom video or photo simulation */}
-                <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-slate-950 flex items-center justify-center">
                   {activeReel.type === "reel" && activeReel.embedIframeUrl ? (
-                    <iframe 
-                      src={activeReel.embedIframeUrl} 
+                    <iframe
+                      src={activeReel.embedIframeUrl}
                       title={activeReel.title}
-                      className="w-[267px] h-[476px] max-w-full max-h-full border-none overflow-hidden rounded-xl shadow-lg"
-                      scrolling="no" 
-                      frameBorder="0" 
-                      allowFullScreen={true} 
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                      className="w-full h-full border-none"
+                      scrolling="no"
+                      allowFullScreen
+                      allow="autoplay; encrypted-media;"
                     />
                   ) : activeReel.type === "reel" ? (
-                    <video 
+                    <video
                       ref={videoRef}
                       key={activeReel.id}
                       src={activeReel.sourceUrl}
@@ -109,151 +83,90 @@ export default function MediaHubView({ onSaveToBoard, savedAssetIds }: MediaHubV
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <img 
-                      src={activeReel.sourceUrl} 
-                      alt={activeReel.title} 
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={activeReel.sourceUrl} alt={activeReel.title} className="w-full h-full object-cover" />
                   )}
-                  {/* Subtle dark bottom shade to readable labels */}
-                  <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
                 </div>
 
-                {/* Top overlay controls */}
-                <div className="relative z-10 p-4 flex justify-between items-center w-full bg-gradient-to-b from-black/55 to-transparent">
-                  <span className="bg-red-500 text-white font-label font-bold text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full">
-                    {activeReel.type.toUpperCase()}
+                {/* Video Top Floating Widgets overlay */}
+                <div className="relative z-20 p-4 flex justify-between items-center w-full bg-gradient-to-b from-black/60 to-transparent">
+                  <span className="bg-[#fcb882] text-slate-950 font-bold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm">
+                    {activeReel.type}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {activeReel.type === "reel" && (
-                      <button 
-                        onClick={() => setIsMuted(!isMuted)}
-                        className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-full cursor-pointer transition-colors"
-                        title={isMuted ? "Unmute Sound" : "Mute Sound"}
-                      >
+                      <button onClick={() => setIsMuted(!isMuted)} className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors backdrop-blur-md">
                         {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                       </button>
                     )}
-                    <button 
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-full cursor-pointer transition-colors"
-                      title={isPlaying ? "Pause Playback" : "Resume Playback"}
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" fill="currentColor" />}
+                    <button onClick={() => setIsPlaying(!isPlaying)} className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors backdrop-blur-md">
+                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
                     </button>
-                    <button 
-                      onClick={() => setExpandedAsset(activeReel)}
-                      className="bg-[#094cb2] hover:bg-[#073ca1] text-white p-2 rounded-full cursor-pointer transition-colors"
-                      title="Watch in Theater Mode"
-                    >
+                    <button onClick={() => setExpandedAsset(activeReel)} className="bg-[#094cb2] hover:bg-[#073ca1] text-white p-2 rounded-full transition-colors backdrop-blur-md">
                       <Maximize2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Bottom metadata details */}
-                <div className="relative z-10 p-5 mt-auto text-white space-y-3">
+                {/* Bottom Video Metadata Overlays */}
+                <div className="relative z-20 p-5 mt-auto text-white space-y-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-[#fcb882] rounded-full text-[#391b00] flex items-center justify-center font-bold text-xs shadow">
-                      N
-                    </div>
+                    <div className="w-8 h-8 bg-[#fcb882] text-slate-950 rounded-full flex items-center justify-center font-extrabold text-sm shadow-md">N</div>
                     <div>
-                      <div className="text-xs font-bold leading-none">Nemo Tours (Verified)</div>
-                      <div className="text-[9px] text-slate-300">facebook.com/tours.nemo</div>
+                      <div className="text-xs font-bold leading-tight">Nemo Tours (Verified)</div>
+                      <div className="text-[10px] text-slate-300 font-mono">@tours.nemo</div>
                     </div>
                   </div>
 
-                  <p className="text-xs font-sans text-slate-200 line-clamp-3 leading-relaxed whitespace-pre-line">
-                    {activeReel.caption}
-                  </p>
+                  <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed font-sans">{activeReel.caption}</p>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-white/10">
-                    <div className="flex items-center gap-3 text-[10px] text-slate-300">
-                      <span>{activeReel.likesCount.toLocaleString()} likes</span>
-                      <span>•</span>
-                      <span>{activeReel.sharesCount} shares</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{activeReel.publishDate}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-slate-300 font-medium">
+                    <span>{activeReel.likesCount.toLocaleString()} likes • {activeReel.sharesCount} shares</span>
+                    <span className="font-mono text-slate-400">{activeReel.publishDate}</span>
                   </div>
 
-                  {/* Share and save widgets */}
-                  <div className="flex gap-2">
-                    <button 
+                  <div className="flex gap-2 pt-1">
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleShare(activeReel)}
-                      className="flex-1 bg-[#fcb882] text-slate-900 hover:bg-[#e5a26c] py-2.5 px-3 rounded-xl font-display font-medium text-[11px] flex items-center justify-center gap-1.5 shadow cursor-pointer transition-all active:scale-95"
+                      className="flex-1 bg-[#fcb882] hover:bg-[#e5a26c] text-slate-950 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow"
                     >
-                      <Share2 className="w-3.5 h-3.5" /> 
-                      {shareStatus[activeReel.id] ? "Link Copied!" : "Share Reel"}
-                    </button>
-                    {activeReel.facebookUrl && (
-                      <a 
-                        href={activeReel.facebookUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center cursor-pointer transition-colors"
-                        title="Watch Original Reel on Facebook"
-                      >
-                        <svg className="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                      </a>
-                    )}
-                    <button 
+                      <Share2 className="w-3.5 h-3.5" />
+                      {shareStatus[activeReel.id] ? "Link Copied!" : "Share Content"}
+                    </motion.button>
+                    <button
                       onClick={() => onSaveToBoard(activeReel)}
-                      className={`p-2.5 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
-                        savedAssetIds.includes(activeReel.id) 
-                          ? "bg-emerald-600 text-white" 
-                          : "bg-white/15 text-white hover:bg-white/25"
-                      }`}
+                      className={`p-2.5 rounded-xl border transition-all ${savedAssetIds.includes(activeReel.id) ? "bg-emerald-600 border-transparent text-white" : "bg-white/10 border-white/10 hover:bg-white/20 text-white"}`}
                     >
-                      <Bookmark className="w-4 h-4" fill={savedAssetIds.includes(activeReel.id) ? "white" : "none"} />
+                      <Bookmark className="w-4 h-4" fill={savedAssetIds.includes(activeReel.id) ? "currentColor" : "none"} />
                     </button>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-slate-400 p-6 text-center">
-                <Play className="w-12 h-12 text-slate-600 mb-3" />
-                <p className="text-xs">Select a post or reel from our gallery feed on the right to load into live player</p>
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 p-6 text-center space-y-2">
+                <Play className="w-10 h-10 text-slate-600 animate-pulse" />
+                <p className="text-xs font-medium">Select an asset card from the timeline gallery to initialize stream media loop.</p>
               </div>
             )}
           </div>
-          <div className="max-w-[340px] text-center mt-2">
-            <span className="text-[11px] font-sans text-slate-500 italic">Autoplay simulation with customized loop playback control</span>
-          </div>
         </div>
 
-        {/* Right Gallery Listing & Feeds */}
+        {/* Right Grid Catalog Stream */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 p-2 rounded-xl">
-            <div className="flex gap-1.5">
-              <button 
-                onClick={() => setFilterType("all")} 
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all ${
-                  filterType === "all" ? "bg-[#003b5c] text-white font-bold" : "text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                All Feed ({mediaList.length})
-              </button>
-              <button 
-                onClick={() => setFilterType("reel")} 
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all ${
-                  filterType === "reel" ? "bg-[#003b5c] text-white font-bold" : "text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Reels only
-              </button>
-              <button 
-                onClick={() => setFilterType("photo")} 
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all ${
-                  filterType === "photo" ? "bg-[#003b5c] text-white font-bold" : "text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Photos only
-              </button>
+          <div className="flex items-center justify-between bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/40">
+            <div className="flex gap-1">
+              {(["all", "reel", "photo"] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilterType(type)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide uppercase transition-all select-none ${filterType === type ? 'bg-[#003b5c] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
-            
-            <div className="text-slate-500 text-[10px] font-mono select-none">
-              Verified catalog
-            </div>
+            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest px-3 hidden sm:block">Feed Archive</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -262,238 +175,112 @@ export default function MediaHubView({ onSaveToBoard, savedAssetIds }: MediaHubV
               const isPinned = savedAssetIds.includes(asset.id);
 
               return (
-                <div 
-                  key={asset.id} 
-                  className={`bg-white rounded-xl overflow-hidden border p-3 flex flex-col justify-between transition-all duration-200 ${
-                    isActive 
-                      ? "border-[#003b5c] ring-2 ring-[#003b5c]/20 shadow-md" 
-                      : "border-slate-100 hover:border-slate-300 shadow-sm"
-                  }`}
+                <div
+                  key={asset.id}
+                  onClick={() => setActiveReel(asset)}
+                  className={`bg-white rounded-2xl overflow-hidden border p-3 flex flex-col justify-between transition-all duration-300 cursor-pointer ${isActive ? "border-[#003b5c] ring-4 ring-[#003b5c]/5 shadow-md" : "border-slate-200/70 hover:border-slate-300 hover:shadow-md"}`}
                 >
-                  <div className="space-y-2">
-                    {/* Media Thumbnail */}
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-900 group">
+                  <div className="space-y-3">
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 group shadow-inner">
                       {asset.type === "reel" ? (
                         <video src={asset.sourceUrl} muted playsInline className="w-full h-full object-cover opacity-80" />
                       ) : (
-                        <img src={asset.sourceUrl} alt={asset.title} className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                        <img src={asset.sourceUrl} alt={asset.title} className="w-full h-full object-cover opacity-95 group-hover:scale-102 transition-transform duration-500" />
                       )}
-                      
-                      {/* Play action indicator */}
-                      <button 
-                        onClick={() => {
-                          setExpandedAsset(asset);
-                        }}
-                        className="absolute inset-0 bg-black/25 group-hover:bg-black/40 flex items-center justify-center transition-colors text-white cursor-pointer"
-                        title={asset.type === "reel" ? "Watch Video Popup" : "View Photo Popup"}
-                      >
-                        {asset.type === "reel" ? (
-                          <div className="bg-[#fcb882] hover:bg-[#e5a26c] text-slate-900 p-3 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform">
-                            <Play className="w-5 h-5 fill-current" />
-                          </div>
-                        ) : (
-                          <div className="bg-white/95 hover:bg-white text-slate-800 text-[11px] font-bold px-3 py-1.5 rounded-lg shadow transition-all hover:scale-105">
-                            View photo
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Play directly in Fullscreen Theater mode */}
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedAsset(asset);
-                        }}
-                        className="absolute top-2 right-2 bg-black/60 hover:bg-[#094cb2] text-white p-1.5 rounded-lg z-10 transition-colors shadow-sm cursor-pointer"
-                        title="Watch in Fullscreen Theater Mode"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5" />
-                      </button>
-
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 flex items-center justify-center transition-colors">
+                        <div className="bg-white/95 p-2.5 rounded-xl text-slate-900 shadow-xl opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 flex items-center gap-1.5 text-xs font-bold">
+                          {asset.type === 'reel' ? <Play className="w-3.5 h-3.5 fill-current" /> : <ImageIcon className="w-3.5 h-3.5" />} Load Media
+                        </div>
+                      </div>
                       {asset.type === "reel" && (
-                        <span className="absolute bottom-1.5 right-1.5 bg-black/75 text-white font-mono text-[9px] px-1.5 py-0.5 rounded">
+                        <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-md text-white font-mono text-[9px] px-2 py-0.5 rounded-md font-bold">
                           {asset.duration}
                         </span>
                       )}
                     </div>
 
-                    {/* Metadata summary */}
-                    <div>
+                    <div className="px-1">
                       <h4 className="font-sans font-bold text-xs text-slate-800 line-clamp-1">{asset.title}</h4>
-                      <p className="font-sans text-[10px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">{asset.caption}</p>
+                      <p className="font-sans text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">{asset.caption}</p>
                     </div>
                   </div>
 
-                  {/* Interactive share and save actions */}
-                  <div className="flex gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-                    <button 
-                      onClick={() => handleShare(asset)}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-1.5 rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Share2 className="w-3 h-3" />
-                      {shareStatus[asset.id] ? "Copied!" : "Share Link"}
+                  <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleShare(asset)} className="flex-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold py-2 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-colors">
+                      <Share2 className="w-3.5 h-3.5" /> {shareStatus[asset.id] ? "Copied!" : "Share link"}
                     </button>
-                    {asset.facebookUrl && (
-                      <a 
-                        href={asset.facebookUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2.5 py-1.5 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors"
-                        title="Watch Original on Facebook"
-                      >
-                        <svg className="w-3.5 h-3.5 fill-current text-blue-600" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                      </a>
-                    )}
-                    <button 
-                      onClick={() => onSaveToBoard(asset)}
-                      className={`px-2 py-1 rounded-lg flex items-center justify-center border transition-colors ${
-                        isPinned 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                          : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
-                      }`}
-                    >
-                      <Bookmark className="w-3 h-3" fill={isPinned ? "currentColor" : "none"} />
+                    <button onClick={() => onSaveToBoard(asset)} className={`px-3 py-2 rounded-xl border transition-colors ${isPinned ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-white hover:bg-slate-50 text-slate-500 border-slate-200"}`}>
+                      <Bookmark className="w-3.5 h-3.5" fill={isPinned ? "currentColor" : "none"} />
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {filteredMedia.length === 0 && (
-            <div className="bg-slate-50 p-12 text-center rounded-xl text-slate-400">
-              No matching assets found in feed.
-            </div>
-          )}
         </div>
-
       </div>
 
+      {/* Theater View Modal Overlay Layer */}
       <AnimatePresence>
         {expandedAsset && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] flex items-center justify-center p-3 sm:p-6"
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] flex items-center justify-center p-4"
             onClick={() => setExpandedAsset(null)}
           >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh] md:max-h-[80vh]"
-              onClick={(e) => e.stopPropagation()}
+            <motion.div
+              initial={{ scale: 0.96, y: 15 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 15 }}
+              className="relative max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh] md:max-h-[80vh]"
+              onClick={e => e.stopPropagation()}
             >
-              {/* Close Button */}
-              <button 
-                onClick={() => setExpandedAsset(null)}
-                className="absolute top-4 right-4 bg-black/60 hover:bg-black/95 text-white p-2.5 rounded-full z-20 cursor-pointer transition-colors shadow"
-                title="Close Theater Mode"
-              >
-                <X className="w-5 h-5" />
+              <button onClick={() => setExpandedAsset(null)} className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2.5 rounded-full z-30 shadow transition-colors">
+                <X className="w-4 h-4" />
               </button>
 
-              {/* Theater Visual Area (Left side) */}
-              <div className="flex-1 bg-slate-950 flex items-center justify-center relative min-h-[350px] md:min-h-0 aspect-video md:aspect-auto p-4 overflow-hidden">
+              <div className="flex-1 bg-slate-950 flex items-center justify-center p-4 relative aspect-video md:aspect-auto">
                 {expandedAsset.type === "reel" && expandedAsset.embedIframeUrl ? (
-                  <iframe 
-                    src={expandedAsset.embedIframeUrl} 
-                    title={expandedAsset.title}
-                    className="w-[267px] h-[476px] max-h-[60vh] md:max-h-full border-none overflow-hidden rounded-xl shadow-lg"
-                    scrolling="no" 
-                    frameBorder="0" 
-                    allowFullScreen={true} 
-                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  />
+                  <iframe src={expandedAsset.embedIframeUrl} title={expandedAsset.title} className="w-full h-full max-h-[60vh] md:max-h-full rounded-xl border-none" />
                 ) : expandedAsset.type === "reel" ? (
-                  <video 
-                    src={expandedAsset.sourceUrl} 
-                    controls 
-                    autoPlay 
-                    playsInline 
-                    className="w-full h-full max-h-[45vh] md:max-h-full object-contain"
-                  />
+                  <video src={expandedAsset.sourceUrl} controls autoPlay className="w-full h-full object-contain" />
                 ) : (
-                  <img 
-                    src={expandedAsset.sourceUrl} 
-                    alt={expandedAsset.title} 
-                    className="w-full h-full max-h-[45vh] md:max-h-full object-contain"
-                    referrerPolicy="no-referrer"
-                  />
+                  <img src={expandedAsset.sourceUrl} alt={expandedAsset.title} className="w-full h-full object-contain" />
                 )}
               </div>
 
-              {/* Sidebar details (Right side) */}
-              <div className="w-full md:w-80 p-5 shrink-0 bg-slate-900 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 text-slate-100 overflow-y-auto">
+              <div className="w-full md:w-80 p-6 bg-slate-900 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800 text-slate-100 overflow-y-auto">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 bg-[#fcb882] rounded-full text-[#391b00] flex items-center justify-center font-extrabold text-sm shadow">
-                      N
-                    </div>
+                    <div className="w-8 h-8 bg-[#fcb882] text-slate-950 rounded-full flex items-center justify-center font-extrabold text-xs shadow-md">N</div>
                     <div>
                       <div className="text-xs font-bold leading-none">Nemo Tours (Verified)</div>
                       <span className="text-[10px] text-slate-400 font-mono">@tours.nemo</span>
                     </div>
                   </div>
 
-                  <div>
-                    <span className="bg-red-500 text-white font-label font-extrabold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded mr-2 align-middle">
-                      {expandedAsset.type.toUpperCase()}
-                    </span>
-                    <span className="text-[11px] text-slate-400 align-middle">{expandedAsset.publishDate}</span>
-                    <h3 className="text-sm font-bold text-white mt-1.5 leading-snug">{expandedAsset.title}</h3>
+                  <div className="space-y-1">
+                    <span className="bg-red-500 text-white font-extrabold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded align-middle">{expandedAsset.type}</span>
+                    <span className="text-xs font-mono text-slate-400 align-middle ml-2">{expandedAsset.publishDate}</span>
+                    <h3 className="text-base font-bold text-white leading-snug pt-1">{expandedAsset.title}</h3>
                   </div>
 
-                  <p className="text-xs text-slate-300 font-sans leading-relaxed whitespace-pre-line bg-slate-950/40 p-3 rounded-xl border border-slate-800/30">
-                    {expandedAsset.caption}
-                  </p>
-
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                    <span className="bg-slate-800 px-2.5 py-1 rounded-full">{expandedAsset.likesCount.toLocaleString()} likes</span>
-                    <span className="bg-slate-800 px-2.5 py-1 rounded-full">{expandedAsset.sharesCount} shares</span>
-                  </div>
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed whitespace-pre-line bg-slate-950/50 p-4 rounded-xl border border-slate-800/40 shadow-inner">{expandedAsset.caption}</p>
                 </div>
 
-                <div className="space-y-2 mt-6 pt-4 border-t border-slate-800/55">
-                  <div className="flex gap-2 text-xs">
-                    <button 
-                      onClick={() => handleShare(expandedAsset)}
-                      className="flex-1 bg-[#fcb882] hover:bg-[#e5a26c] text-slate-950 font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-sm"
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                      {shareStatus[expandedAsset.id] ? "Copied Share Link!" : "Share Link"}
+                <div className="space-y-3 pt-4 border-t border-slate-800 mt-6">
+                  <div className="flex gap-2">
+                    <button onClick={() => handleShare(expandedAsset)} className="flex-1 bg-[#fcb882] hover:bg-[#e5a26c] text-slate-950 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95">
+                      <Share2 className="w-3.5 h-3.5" /> {shareStatus[expandedAsset.id] ? "Copied!" : "Share Content Link"}
                     </button>
-                    <button 
-                      onClick={() => onSaveToBoard(expandedAsset)}
-                      className={`px-3 py-2 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-                        savedAssetIds.includes(expandedAsset.id) 
-                          ? "bg-emerald-600 text-white" 
-                          : "bg-slate-800 hover:bg-slate-750 text-slate-300"
-                      }`}
-                      title="Pin to Saved Board"
-                    >
-                      <Bookmark className="w-4 h-4" fill={savedAssetIds.includes(expandedAsset.id) ? "white" : "none"} />
+                    <button onClick={() => onSaveToBoard(expandedAsset)} className={`p-3 rounded-xl border transition-colors ${savedAssetIds.includes(expandedAsset.id) ? "bg-emerald-600 border-transparent text-white" : "bg-slate-800 border-slate-700 text-slate-400"}`}>
+                      <Bookmark className="w-4 h-4" fill={savedAssetIds.includes(expandedAsset.id) ? "currentColor" : "none"} />
                     </button>
                   </div>
-                  {expandedAsset.facebookUrl && (
-                    <a 
-                      href={expandedAsset.facebookUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition-colors text-center"
-                    >
-                      <svg className="w-3.5 h-3.5 fill-current inline-block mr-1" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                      Open Link on Facebook
-                    </a>
-                  )}
                 </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

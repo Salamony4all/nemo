@@ -1,0 +1,28 @@
+{
+  "appName": "nemo-tours",
+  "repository": {
+    "url": "https://github.com/Salamony4all/nemo.git",
+    "defaultBranch": "main"
+  },
+  "deployment": {
+    "target": "vercel",
+    "vercel": {
+      "projectId": "prj_celXCrxjpf1YcBWZO3iq90y8ujq3",
+      "orgId": "team_tjKTyIl71hyPcHGe5dUeCsFg",
+      "productionUrl": "https://nemo-chi-coral.vercel.app"
+    }
+  },
+  "validation": {
+    "testCommand": "",
+    "buildValidation": "npm run build",
+    "timeoutSeconds": 120
+  },
+  "selfHealing": {
+    "enabled": true,
+    "maxAttempts": 3,
+    "searchGrounding": true,
+    "criticalFiles": [
+      "src/App.tsx"
+    ]
+  }
+}

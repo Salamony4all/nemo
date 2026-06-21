@@ -9,6 +9,7 @@ import {
   MapPin, Phone, MessageSquare, Download, Check, Trash2, Globe, Settings, X, Menu, ShieldCheck, Award
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import nemoLogo from "./logo.png";
 
 const EXCHANGE_RATE = 48.5;
 
@@ -251,7 +252,7 @@ export default function App() {
                 <span className="text-[7px] text-slate-400 font-sans tracking-wide uppercase font-bold">Alexandria</span>
               </div>
               <img 
-                src="https://lh3.googleusercontent.com/aida/AP1WRLverbP5Y2f7iH1QOIxJk-890Q0mVcoZN_ecj3lzkEdJS8QSMxTeZlj04Lql5tWmRn374BbKROKvEnkKMp0Mht74mz9teE5hFPTAnjoIPYBrth5q57UJk5Z7GwctZe34GRgIWMMx2BOc-lO8NbvG5HTAjaZYrtx2afcckVRR5EuRb6ki1BRsuRLDdXAf-hiRKLtzQSZkYKzCAQw-UTDNukjMgBcFsD0e_HJZb9enSlIAKno9QHZBfntaZuw" 
+                src={nemoLogo} 
                 alt="Nemo Avatar badge logo" 
                 className="h-8 w-8 object-contain rounded-full border border-slate-200/50 shadow-sm"
               />
@@ -326,7 +327,7 @@ export default function App() {
               <span className="text-[7px] text-slate-400 font-sans tracking-wide uppercase font-bold">Alexandria</span>
             </div>
             <img 
-              src="https://lh3.googleusercontent.com/aida/AP1WRLverbP5Y2f7iH1QOIxJk-890Q0mVcoZN_ecj3lzkEdJS8QSMxTeZlj04Lql5tWmRn374BbKROKvEnkKMp0Mht74mz9teE5hFPTAnjoIPYBrth5q57UJk5Z7GwctZe34GRgIWMMx2BOc-lO8NbvG5HTAjaZYrtx2afcckVRR5EuRb6ki1BRsuRLDdXAf-hiRKLtzQSZkYKzCAQw-UTDNukjMgBcFsD0e_HJZb9enSlIAKno9QHZBfntaZuw" 
+              src={nemoLogo} 
               alt="Nemo Avatar badge logo" 
               className="h-9 w-9 md:h-10 md:w-10 object-contain rounded-full border border-slate-200/50 shadow-sm"
             />

@@ -4,9 +4,11 @@ import { PRESEEDED_OFFERS, PRESEEDED_MEDIA } from "./data";
 import TourDetailsView from "./components/TourDetailsView";
 import MediaHubView from "./components/MediaHubView";
 import CompanionAIView from "./components/CompanionAIView";
-import { 
-  Compass, Sparkles, Film, Bookmark, Star, Calendar, 
-  MapPin, Phone, MessageSquare, Download, Check, Trash2, Globe, Settings, X, Menu, ShieldCheck, Award
+import AdminAuth from "./components/AdminAuth";
+import AdminDashboard from "./components/AdminDashboard";
+import {
+  Compass, Sparkles, Film, Bookmark, Star, Calendar,
+  MapPin, Phone, MessageSquare, Download, Check, Trash2, Globe, Settings, X, Menu, ShieldCheck, Award, LogOut
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import nemoLogo from "./logo.png";
@@ -14,11 +16,19 @@ import nemoLogo from "./logo.png";
 const EXCHANGE_RATE = 48.5;
 
 export default function App() {
+  // Reactive local workspace states replacing static data tracks
+  const [offers, setOffers] = useState<TourOffer[]>(PRESEEDED_OFFERS);
+  const [media, setMedia] = useState<MediaAsset[]>(PRESEEDED_MEDIA);
+
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<"offers" | "media" | "ai" | "board">("offers");
-  
+
   // Selected Tour for detail view modal
   const [selectedTour, setSelectedTour] = useState<TourOffer | null>(null);
+
+  // Administrative Layout State Handshakes
+  const [viewingAdmin, setViewingAdmin] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
 
   // Saved/Bookmarked media board IDs
   const [savedAssetIds, setSavedAssetIds] = useState<string[]>([]);
@@ -50,14 +60,14 @@ export default function App() {
     try {
       localStorage.setItem("nemo_preferred_currency", newCurrency);
       localStorage.setItem("nemo_max_price", computedMaxPrice.toString());
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleMaxPriceChange = (val: number) => {
     setMaxPrice(val);
     try {
       localStorage.setItem("nemo_max_price", val.toString());
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Luxury preferences and settings panel states
@@ -72,10 +82,10 @@ export default function App() {
       const storedTours = localStorage.getItem("nemo_saved_tours");
       const storedCurrency = localStorage.getItem("nemo_preferred_currency");
       const storedMaxPrice = localStorage.getItem("nemo_max_price");
-      
+
       if (storedAssets) setSavedAssetIds(JSON.parse(storedAssets));
       if (storedTours) setBookmarkedTourIds(JSON.parse(storedTours));
-      
+
       if (storedCurrency === "EGP" || storedCurrency === "USD") {
         setCurrency(storedCurrency);
         if (storedMaxPrice) {
@@ -123,27 +133,27 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  const filteredOffers = PRESEEDED_OFFERS.filter(tour => {
+  const filteredOffers = offers.filter(tour => {
     const tourPrice = currency === "EGP" ? tour.price * EXCHANGE_RATE : tour.price;
     const matchesPrice = tourPrice <= maxPrice;
-    const matchesSearch = tour.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          tour.arabicTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          tour.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tour.arabicTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tour.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesPrice && matchesSearch;
   });
 
   return (
     <div id="full-app-root" className={`min-h-screen font-sans flex flex-col justify-between transition-colors duration-300 ${highContrast ? "bg-slate-950 text-slate-100" : "bg-[#f8f9fa] text-[#191c1d]"}`}>
-      
+
       {/* 1. Header Section - Stable sticky header to avoid layout shifts or flicker */}
       <header id="brand-header" className="bg-white/95 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-30 shadow-sm py-2">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4 relative">
-          
+
           {/* Top Row for Mobile (Settings button + Branding identity) / Becomes normal item on Desktop */}
           <div className="flex items-center justify-between w-full md:w-auto relative">
             {/* Settings Menu button wrapped in local relative container so that dropdown aligns perfectly */}
             <div className="relative flex items-center">
-              <button 
+              <button
                 onClick={() => setSettingsOpen(!settingsOpen)}
                 className={`bg-[#003b5c] text-white hover:bg-[#00253b] p-2 rounded-full xs:p-2.5 transition-all flex items-center justify-center shadow-sm cursor-pointer hover:scale-105 active:scale-95 ${settingsOpen ? "ring-2 ring-emerald-400" : ""}`}
                 aria-label="Settings Action Toggle"
@@ -154,7 +164,7 @@ export default function App() {
               <AnimatePresence>
                 {/* Active Settings Preference Dropdown Panel - positioned right beneath settings button */}
                 {settingsOpen && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -166,7 +176,7 @@ export default function App() {
                         <X className="w-4 h-4" />
                       </button>
                     </div>
-                    
+
                     <div className="space-y-3 text-xs">
                       {/* Budget Limit Slider */}
                       <div className="space-y-1">
@@ -174,7 +184,7 @@ export default function App() {
                           <span className="text-slate-600">Max Excursion Budget:</span>
                           <span className="text-[#094cb2] font-bold">{currency === "EGP" ? `${maxPrice.toLocaleString()} EGP` : `$${maxPrice}`}</span>
                         </div>
-                        <input 
+                        <input
                           type="range"
                           min={currency === "EGP" ? 500 : 10}
                           max={currency === "EGP" ? 25000 : 500}
@@ -188,7 +198,7 @@ export default function App() {
                       {/* High Contrast Color/Layout Toggler */}
                       <div className="flex items-center justify-between py-1 border-t border-slate-100">
                         <span className="font-semibold text-slate-600">High Contrast Mode</span>
-                        <button 
+                        <button
                           onClick={() => setHighContrast(!highContrast)}
                           className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${highContrast ? "bg-emerald-600" : "bg-slate-300"}`}
                         >
@@ -199,7 +209,7 @@ export default function App() {
                       {/* Currency Toggler */}
                       <div className="flex items-center justify-between py-1 border-t border-slate-100">
                         <span className="font-semibold text-slate-600">Preferred Currency</span>
-                        <select 
+                        <select
                           value={currency}
                           onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "EGP")}
                           className="bg-slate-100 text-slate-700 text-[11px] p-1.5 rounded border-none outline-none font-medium cursor-pointer"
@@ -212,7 +222,7 @@ export default function App() {
                       {/* Language Setting */}
                       <div className="flex items-center justify-between py-1 border-t border-slate-100">
                         <span className="font-semibold text-slate-600">Language Setting</span>
-                        <select 
+                        <select
                           value={selectedLanguage}
                           onChange={(e) => setSelectedLanguage(e.target.value as "en" | "ar")}
                           className="bg-slate-100 text-slate-700 text-[11px] p-1.5 rounded border-none outline-none font-medium cursor-pointer"
@@ -222,9 +232,36 @@ export default function App() {
                         </select>
                       </div>
 
+                      {/* ADDED SUBSECTION: Administrative Secure Portal Trigger Link */}
+                      <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            setViewingAdmin(true);
+                            setSettingsOpen(false);
+                            setSelectedTour(null);
+                          }}
+                          className={`w-full font-bold py-2.5 rounded-xl text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${viewingAdmin ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-[#003b5c] hover:bg-[#00253b] text-white shadow-sm"}`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          {isAdminAuthenticated ? "Go to Admin Panel" : "Administrator Portal"}
+                        </button>
+
+                        {viewingAdmin && (
+                          <button
+                            onClick={() => {
+                              setViewingAdmin(false);
+                              setIsAdminAuthenticated(false);
+                            }}
+                            className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-[11px] text-center transition-colors cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            <LogOut className="w-3 h-3" /> Exit Admin Space
+                          </button>
+                        )}
+                      </div>
+
                       {/* Reset storage action */}
                       <div className="pt-2 border-t border-slate-100">
-                        <button 
+                        <button
                           onClick={() => {
                             if (confirm("Are you sure you want to clear your saved board bookmarks?")) {
                               setSavedAssetIds([]);
@@ -251,9 +288,9 @@ export default function App() {
                 <span className="text-[10px] font-extrabold text-[#00253b] font-serif block">NEMO TOURS</span>
                 <span className="text-[7px] text-slate-400 font-sans tracking-wide uppercase font-bold">Alexandria</span>
               </div>
-              <img 
-                src={nemoLogo} 
-                alt="Nemo Avatar badge logo" 
+              <img
+                src={nemoLogo}
+                alt="Nemo Avatar badge logo"
                 className="h-8 w-8 object-contain rounded-full border border-slate-200/50 shadow-sm"
               />
             </div>
@@ -261,53 +298,49 @@ export default function App() {
 
           {/* Centered navigation tabs - Spans full width on mobile, and standard max-w-xl on desktop */}
           <nav className="w-full md:flex-1 md:max-w-xl flex items-center justify-around bg-slate-100 p-0.5 xs:p-1 rounded-xl md:rounded-2xl border border-slate-200">
-            <button 
+            <button
               id="tab-summer-offers"
-              onClick={() => { setActiveTab("offers"); setSelectedTour(null); }}
-              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${
-                activeTab === "offers" && !selectedTour 
-                  ? "bg-white text-[#00253b] font-extrabold shadow-sm" 
+              onClick={() => { setActiveTab("offers"); setSelectedTour(null); setViewingAdmin(false); }}
+              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${activeTab === "offers" && !selectedTour && !viewingAdmin
+                  ? "bg-white text-[#00253b] font-extrabold shadow-sm"
                   : "text-[#42474e] hover:bg-slate-200/50"
-              }`}
+                }`}
             >
               <Compass className="w-3.5 h-3.5 text-[#094cb2]" />
               <span className="hidden xs:inline">Summer Offers</span>
               <span className="inline xs:hidden">Offers</span>
             </button>
-            <button 
+            <button
               id="tab-media-downloader"
-              onClick={() => { setActiveTab("media"); setSelectedTour(null); }}
-              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${
-                activeTab === "media" 
-                  ? "bg-white text-[#00253b] font-extrabold shadow-sm" 
+              onClick={() => { setActiveTab("media"); setSelectedTour(null); setViewingAdmin(false); }}
+              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${activeTab === "media" && !viewingAdmin
+                  ? "bg-white text-[#00253b] font-extrabold shadow-sm"
                   : "text-[#42474e] hover:bg-slate-200/50"
-              }`}
+                }`}
             >
               <Film className="w-3.5 h-3.5 text-[#094cb2]" />
               <span className="hidden xs:inline">Media Hub</span>
               <span className="inline xs:hidden">Media</span>
             </button>
-            <button 
+            <button
               id="tab-ai-companion"
-              onClick={() => { setActiveTab("ai"); setSelectedTour(null); }}
-              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${
-                activeTab === "ai" 
-                  ? "bg-white text-[#00253b] font-extrabold shadow-sm" 
+              onClick={() => { setActiveTab("ai"); setSelectedTour(null); setViewingAdmin(false); }}
+              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer ${activeTab === "ai" && !viewingAdmin
+                  ? "bg-white text-[#00253b] font-extrabold shadow-sm"
                   : "text-[#42474e] hover:bg-slate-200/50"
-              }`}
+                }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-[#094cb2]" />
               <span className="hidden xs:inline">AI Coach</span>
               <span className="inline xs:hidden">Coach</span>
             </button>
-            <button 
+            <button
               id="tab-saved-board"
-              onClick={() => { setActiveTab("board"); setSelectedTour(null); }}
-              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer relative ${
-                activeTab === "board" 
-                  ? "bg-white text-[#00253b] font-extrabold shadow-sm" 
+              onClick={() => { setActiveTab("board"); setSelectedTour(null); setViewingAdmin(false); }}
+              className={`flex-1 py-1.5 px-1 xs:px-2 md:py-2.5 md:px-3 rounded-lg md:rounded-xl text-[11px] xs:text-xs font-semibold flex items-center justify-center gap-1 xs:gap-1.5 transition-all outline-none border-none select-none cursor-pointer relative ${activeTab === "board" && !viewingAdmin
+                  ? "bg-white text-[#00253b] font-extrabold shadow-sm"
                   : "text-[#42474e] hover:bg-slate-200/50"
-              }`}
+                }`}
             >
               <Bookmark className="w-3.5 h-3.5 text-[#094cb2]" />
               <span className="hidden xs:inline">Saved Board</span>
@@ -326,9 +359,9 @@ export default function App() {
               <span className="text-[10px] font-extrabold text-[#00253b] font-serif block">NEMO TOURS</span>
               <span className="text-[7px] text-slate-400 font-sans tracking-wide uppercase font-bold">Alexandria</span>
             </div>
-            <img 
-              src={nemoLogo} 
-              alt="Nemo Avatar badge logo" 
+            <img
+              src={nemoLogo}
+              alt="Nemo Avatar badge logo"
               className="h-9 w-9 md:h-10 md:w-10 object-contain rounded-full border border-slate-200/50 shadow-sm"
             />
           </div>
@@ -338,9 +371,9 @@ export default function App() {
 
       {/* 2. Primary Tabs Content Layout Area */}
       <main className="flex-1 w-full bg-[#faf9fa] transition-all">
-        
+
         {/* Huge Header Hero Banner Logo & coordinates address badge - Scrolls naturally, so zero layout shift, zero flicker! */}
-        {!selectedTour && (
+        {!selectedTour && !viewingAdmin && (
           <div className="w-full bg-white border-b border-slate-200/50 py-6 md:py-8 mb-2">
             <div className="max-w-7xl mx-auto px-4 lg:px-6 flex flex-col items-center gap-3">
               {/* Center elegant address pill badge */}
@@ -353,18 +386,18 @@ export default function App() {
 
               {/* Huge Header Hero Banner Logo */}
               <div className="w-full flex justify-center max-w-5xl px-4">
-                <img 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFEd82RMtU69keM-gUm-kiI7Ik8JyhZOOsfNK3azeD5w9sjck662F86RH3z_-C-sB1yPpioLpyMTXnXR4LCIAWaI7Int9Yx3aMcSGbLG8ZnC3DAaO2QIc2vyXDbvM_ABuPQzxfe2WdsuN8fx5JWUFcgIltCMgDQUT_7ImqRFz5SzBHKEzd32h-xyyfC4fdqMlaT0DwfoX9gXMlGdIk8jvAr71pSyVui2LRuiFa7FJuXkgP3L_i7wusfKoDBvKYqqdF-uAYP6Vt1AM" 
-                  alt="Nemo Tours Official Banner Logo" 
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFEd82RMtU69keM-gUm-kiI7Ik8JyhZOOsfNK3azeD5w9sjck662F86RH3z_-C-sB1yPpioLpyMTXnXR4LCIAWaI7Int9Yx3aMcSGbLG8ZnC3DAaO2QIc2vyXDbvM_ABuPQzxfe2WdsuN8fx5JWUFcgIltCMgDQUT_7ImqRFz5SzBHKEzd32h-xyyfC4fdqMlaT0DwfoX9gXMlGdIk8jvAr71pSyVui2LRuiFa7FJuXkgP3L_i7wusfKoDBvKYqqdF-uAYP6Vt1AM"
+                  alt="Nemo Tours Official Banner Logo"
                   className="w-full h-auto max-h-56 md:max-h-72 object-contain"
                 />
               </div>
             </div>
           </div>
         )}
-        
+
         <AnimatePresence mode="wait">
-          
+
           {/* A. If details view option is ACTIVE */}
           {selectedTour ? (
             <motion.div
@@ -373,11 +406,30 @@ export default function App() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
-              <TourDetailsView 
-                tour={selectedTour} 
-                onBack={() => setSelectedTour(null)} 
+              <TourDetailsView
+                tour={selectedTour}
+                onBack={() => setSelectedTour(null)}
                 formatPrice={formatPrice}
               />
+            </motion.div>
+          ) : viewingAdmin ? (
+            /* B. If Admin Portal Access layout has been targeted */
+            <motion.div
+              key="admin-portal-panel"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+            >
+              {!isAdminAuthenticated ? (
+                <AdminAuth onAuthenticated={() => setIsAdminAuthenticated(true)} />
+              ) : (
+                <AdminDashboard
+                  offers={offers}
+                  setOffers={setOffers}
+                  media={media}
+                  setMedia={setMedia}
+                />
+              )}
             </motion.div>
           ) : (
             // Regular Tabs
@@ -388,31 +440,31 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
             >
-              
+
               {/* TAB 1: Available Summer Excursion Offers */}
               {activeTab === "offers" && (
                 <div id="offers-list-container" className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-                  
+
                   {/* Filter & Search Bar */}
                   <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
                     <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                       <div className="w-full md:w-1/2">
                         <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Search Nemo Expeditions</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="e.g. dolphin, Marsa Alam, catamaran..."
                           className="w-full bg-[#f3f4f5] p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-[#094cb2]"
                         />
                       </div>
-                      
+
                       <div className="w-full md:w-1/3">
                         <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
                           <span>Max Budget</span>
                           <span className="text-[#094cb2]">Under {currency === "EGP" ? `${maxPrice.toLocaleString()} EGP` : `$${maxPrice}`}</span>
                         </div>
-                        <input 
+                        <input
                           type="range"
                           min={currency === "EGP" ? 500 : 10}
                           max={currency === "EGP" ? 25000 : 500}
@@ -446,16 +498,16 @@ export default function App() {
                     {filteredOffers.map((tour) => {
                       const isPinned = bookmarkedTourIds.includes(tour.id);
                       return (
-                        <div 
-                          key={tour.id} 
+                        <div
+                          key={tour.id}
                           className="w-full bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-lg transition-all border border-slate-200/50 flex flex-col group"
                         >
                           {/* Image boxaspect aspect-[4/3] */}
                           <div className="relative w-full aspect-square md:aspect-[16/10] overflow-hidden">
-                            <img 
-                              alt={tour.title} 
-                              className="w-full h-full object-cover group-hover:scale-101 transition-transform duration-300" 
-                              src={tour.imageUrl} 
+                            <img
+                              alt={tour.title}
+                              className="w-full h-full object-cover group-hover:scale-101 transition-transform duration-300"
+                              src={tour.imageUrl}
                             />
                             {/* Badges Overlay */}
                             <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -464,7 +516,7 @@ export default function App() {
                               </span>
                             </div>
 
-                            <button 
+                            <button
                               onClick={() => handleToggleTourBookmark(tour.id)}
                               className="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full cursor-pointer hover:bg-white text-rose-500 shadow active:scale-90"
                             >
@@ -472,7 +524,7 @@ export default function App() {
                             </button>
 
                             <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                            
+
                             <div className="absolute bottom-4 left-4 text-white">
                               <div className="flex items-center gap-1.5 text-xs text-[#fcb882] font-semibold">
                                 <Star className="w-3.5 h-3.5 fill-current" />
@@ -511,7 +563,7 @@ export default function App() {
 
                             <div className="flex gap-2">
                               {/* Open Detail action */}
-                              <button 
+                              <button
                                 id={`btn-details-${tour.id}`}
                                 onClick={() => setSelectedTour(tour)}
                                 className="flex-1 bg-[#003b5c] text-[#ffffff] font-display font-semibold py-3.5 rounded-xl shadow hover:bg-[#00253b] active:scale-[0.98] transition-all flex justify-center items-center gap-2 group cursor-pointer"
@@ -534,7 +586,7 @@ export default function App() {
 
                   {/* Skip Option from original Page 1 */}
                   <div className="mt-8 text-center pb-8 border-t pt-6 select-none">
-                    <button 
+                    <button
                       onClick={() => setActiveTab("media")}
                       className="font-label text-xs font-semibold text-slate-500 hover:text-[#094cb2] transition-colors underline decoration-transparent hover:decoration-[#094cb2] underline-offset-4 cursor-pointer"
                     >
@@ -547,26 +599,26 @@ export default function App() {
 
               {/* TAB 2: Facebook Media Downloader Hub */}
               {activeTab === "media" && (
-                <MediaHubView 
-                  onSaveToBoard={handleSaveAssetToBoard} 
-                  savedAssetIds={savedAssetIds} 
+                <MediaHubView
+                  onSaveToBoard={handleSaveAssetToBoard}
+                  savedAssetIds={savedAssetIds}
                 />
               )}
 
               {/* TAB 3: Client Gemini Co-Pilot Chat coach */}
               {activeTab === "ai" && (
-                <CompanionAIView 
+                <CompanionAIView
                   onSuggestExcursion={(tourId) => {
-                    const match = PRESEEDED_OFFERS.find(t => t.id === tourId);
+                    const match = offers.find(t => t.id === tourId);
                     if (match) setSelectedTour(match);
-                  }} 
+                  }}
                 />
               )}
 
               {/* TAB 4: Client personal saved collection list */}
               {activeTab === "board" && (
                 <div id="board-saved-list" className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-                  
+
                   {/* Bookmarked Excursions header */}
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <h2 className="font-serif font-bold text-lg text-[#191c1d] flex items-center gap-2 border-b pb-3">
@@ -575,7 +627,7 @@ export default function App() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {PRESEEDED_OFFERS.filter(t => bookmarkedTourIds.includes(t.id)).map((tour) => (
+                      {offers.filter(t => bookmarkedTourIds.includes(t.id)).map((tour) => (
                         <div key={tour.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <img src={tour.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="" />
@@ -584,15 +636,15 @@ export default function App() {
                               <span className="text-[10px] text-emerald-700 font-semibold">{formatPrice(tour.price)}</span>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-1 shrink-0">
-                            <button 
+                            <button
                               onClick={() => setSelectedTour(tour)}
                               className="bg-[#003b5c] text-white px-2.5 py-1.5 rounded font-display font-semibold text-[10px]"
                             >
                               Details
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleToggleTourBookmark(tour.id)}
                               className="text-red-500 p-1 hover:bg-slate-100 rounded"
                             >
@@ -616,7 +668,7 @@ export default function App() {
                     </h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {PRESEEDED_MEDIA.filter(m => savedAssetIds.includes(m.id)).map((asset) => (
+                      {media.filter(m => savedAssetIds.includes(m.id)).map((asset) => (
                         <div key={asset.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
                           <div className="space-y-2">
                             <div className="aspect-video relative rounded-lg overflow-hidden bg-slate-900">
@@ -634,13 +686,13 @@ export default function App() {
                           </div>
 
                           <div className="flex gap-2 pt-3 border-t border-slate-200/50 mt-2">
-                            <button 
+                            <button
                               onClick={() => handleNativeSaveFromBoard(asset)}
                               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1.5 rounded text-[10px] flex items-center justify-center gap-1"
                             >
                               <Download className="w-3.5 h-3.5" /> Save Natively
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleSaveAssetToBoard(asset)}
                               className="text-slate-500 hover:bg-slate-200 p-1 rounded"
                             >
@@ -669,13 +721,13 @@ export default function App() {
       {/* 3. Footer Coordinates Section (With verified operator address and contacts) */}
       <footer id="brand-footer" className="bg-[#001d31] text-white py-10 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          
+
           <div className="space-y-3">
             <h3 className="font-serif font-extrabold text-[#f3be68] text-lg uppercase tracking-wide">
               Nemo Tours (نيمو تورز)
             </h3>
             <p className="text-xs text-slate-400 font-sans leading-relaxed">
-              Premium Red Sea Expeditions. Providing elite yacht charters, dolphin snorkeling safely, and family cruising packages with absolute Egyptian hospitality. 
+              Premium Red Sea Expeditions. Providing elite yacht charters, dolphin snorkeling safely, and family cruising packages with absolute Egyptian hospitality.
             </p>
           </div>
 
